@@ -3,6 +3,7 @@
 # Use Pillow to work with TIFF files
 import xml.etree.ElementTree as ET
 from PIL import Image   
+import os
 import numpy
 
 
@@ -41,10 +42,11 @@ for track in tracks:
 
 # For each spot in each track, seek the frame from the TIFF file
 # Crop the frame based on the coordinates of the spot
+# Create TIFF files from the cropped frames
+cropped_tif_array = []
 
 for track in track_spot_IDs:
     new_frames = []
-    new_tif = Image.new('I;16', (150, 150))
     for spot_id in track:
         spot_data = trackmate_xml_tree_root.find('./Model/AllSpots//Spot/[@ID="' + spot_id +'"]')
         frame = spot_data.get('FRAME')
@@ -57,10 +59,7 @@ for track in track_spot_IDs:
 
         # Cropping bounds
         new_frames.append(tif_data.crop((float(x_cord) - 75 , float(y_cord) - 75, float(x_cord) + 75, float(y_cord) + 75)))
-    new_tif.save('temp.tif', save_all=True, append_images=new_frames)
-    new_tif = Image.open('temp.tif')
-    
-
+    new_frames[0].save('test.tif', save_all=True, append_images=new_frames[1:])
 
     
 
