@@ -57,8 +57,9 @@ for track in track_spot_IDs:
 
         # Cropping bounds
         new_frames.append(tif_data.crop((float(x_cord) - 75 , float(y_cord) - 75, float(x_cord) + 75, float(y_cord) + 75)))
-
-    new_tif.save("test.tif", save_all=True, append_images=new_frames)
+    new_tif.save('temp.tif', save_all=True, append_images=new_frames)
+    new_tif = Image.open('temp.tif')
+    
 
 
     
