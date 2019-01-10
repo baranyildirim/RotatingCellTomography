@@ -5,6 +5,7 @@ import xml.etree.ElementTree as ET
 from PIL import Image   
 import os
 import numpy
+import operator
 
 
 xml_file = 'data\\20xm2v2.xml'
@@ -36,35 +37,46 @@ for track in tracks:
     for edge in track.findall('./Edge'):
         track_spots.add(edge.get('SPOT_SOURCE_ID'))
         track_spots.add(edge.get('SPOT_TARGET_ID'))
-    track_spots = sorted(track_spots)
+    #track_spots = sorted(track_spots)
     track_spot_IDs.append(track_spots)
     print(track_spots)
 
-# For each spot in each track, seek the frame from the TIFF file
-# Crop the frame based on the coordinates of the spot
-# Create TIFF files from the cropped frames
-cropped_tif_array = []
-
+track_spot_data = []
+# For each spot in each track, collect data about the spot
 for track in track_spot_IDs:
-    new_frames = []
+    spots = []
     for spot_id in track:
         spot_data = trackmate_xml_tree_root.find('./Model/AllSpots//Spot/[@ID="' + spot_id +'"]')
-        frame = spot_data.get('FRAME')
-        x_cord = spot_data.get('POSITION_X')
-        y_cord = spot_data.get('POSITION_Y')
-        print(spot_id, frame, x_cord, y_cord)
+        frame = int(spot_data.get('FRAME'))
+        x_cord = float(spot_data.get('POSITION_X'))
+        y_cord = float(spot_data.get('POSITION_Y'))
+        print("\n", spot_id, frame, x_cord, y_cord)
+        spots.append((frame, x_cord, y_cord))
+    #sort spot data by frame
+    spots = sorted(spots, key=operator.itemgetter(0))
+    track_spot_data.append(spots)
 
-        tif_data.seek(int(frame))
+
+# For each spot in each track, seek the frame from the TIFF file
+# Crop the frame based on the coordinates of the spot
+# Create TIFF files from the cropped frames  
+for spots in track_spot_data:
+    new_frames = []
+    for spot in spots:
+        tif_data.seek(spot[0])
         print(tif_data.tell())
-
         # Cropping bounds
-        new_frames.append(tif_data.crop((float(x_cord) - 75 , float(y_cord) - 75, float(x_cord) + 75, float(y_cord) + 75)))
+        x1 = spot[1] - 40
+        y1 = spot[2] - 40
+        if x1 < 0:
+            x1 = 0
+        if y1 < 0:
+            y1 = 0
+        x2 = x1 + 80
+        y2 = y1 + 80
+        print("Bounds: ", x1, y1, x2, y2)
+        new_frames.append(tif_data.crop((x1, y1, x2, y2)))
     new_frames[0].save('test.tif', save_all=True, append_images=new_frames[1:])
-
-    
-
-
-
 
         
 
