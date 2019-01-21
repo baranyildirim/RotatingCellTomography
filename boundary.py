@@ -6,9 +6,13 @@ import random
 import pickle
 import scipy
 from skimage.measure import compare_ssim as ssim
+from matplotlib import pyplot as plt
+
+
 
 # Feature extractor
 def extract_features(image, vector_size=32):
+    
     try:
         # Using KAZE, cause SIFT, ORB and other was moved to additional module
         # which is adding addtional pain during install
@@ -18,6 +22,17 @@ def extract_features(image, vector_size=32):
         print("KPS: ", kps)
         # Getting first 32 of them. 
         # Number of keypoints is varies depend on image size and color pallet
+        DEBUG_MODE = 1 
+
+        if DEBUG_MODE > 0:
+            debug_image = image
+            cv.imshow("Image", image)
+            cv.waitKey(0)
+            debug_image = cv.drawKeypoints(image,kps, numpy.array([]), color=(0,255,0), flags=0)
+            cv.imshow('Image Keypoints',debug_image)
+            cv.waitKey(0)
+  
+        
         # Sorting them based on keypoint response value(bigger is better)
         kps = sorted(kps, key=lambda x: -x.response)[:vector_size]
         # computing descriptors vector
@@ -31,8 +46,8 @@ def extract_features(image, vector_size=32):
             # if we have less the 32 descriptors then just adding zeros at the
             # end of our feature vector
             dsc = numpy.concatenate([dsc, numpy.zeros(needed_size - dsc.size)])
-    except:
-        print('Error')
+    except Exception as e:
+        print('Error: ', e)
         return None
 
     return dsc
@@ -52,7 +67,10 @@ def boundary_match():
         try:
             while True:
                 #Perform future extraction for every frame
-                tif_frame = numpy.array(cropped_tif_track)
+                tif_frame = numpy.array(cropped_tif_track)            
+                tif_frame = (tif_frame/256).astype(numpy.uint8)
+                tif_frame = cv.Canny(tif_frame, 0, 25)
+                
                 print("Frame: ", cropped_tif_track.tell())
                 dsc = extract_features(tif_frame)
                 if dsc is not None and len(dsc) > 0:
